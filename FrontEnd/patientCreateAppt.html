@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book an Appointment</title>
+    <script src="daypilot-all.min.js"></script>
+    <link type="text/css" rel="stylesheet" href="./CSS/calendar_g.css" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link type="text/css" rel="Stylesheet" href="./CSS/patientCreateAppt.css">
+</head>
+
+<body onload="getLoggedInPatient()">
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">Doctor Finder</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
+            aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+            <div class="navbar-nav">
+                <a class="nav-item nav-link active" href="#">Book Appointment <span class="sr-only">(current)</span></a>
+                <a class="nav-item nav-link" id="dash" href="./patientDashboard.html">Dashboard</a>
+                <!-- <a class="nav-item nav-link" href="./login.html">Login</a> -->
+                <a class="nav-item nav-link" id="about" href="./About.html">About</a>
+                <!-- <a class="nav-item nav-link" href="./PatAccCreate.html">Sign Up</a> -->
+                <a class="nav-item nav-link" id="contact" href="./Contact.html">Contact Us</a>
+
+            </div>
+        </div>
+        <span class="navbar-text"><button type="button" onclick="logout()" class="btn btn-link">Logout</button></span>
+    </nav>
+
+    <div class="container">
+
+        <div class="border border-3 rounded-3 text-center pb-3 bg-light">
+            <h1 id="header">Book an Appointment now!</h1>
+
+            <h3 class="lead mt-3 display-5">Please select a specialty</h3>
+            <div>
+                <div class="form-group px-5">
+                    <select id="specialty" class="form-control" onchange="loadCalendar(), loadNav()">
+                        <option value="5">Cardiologist</option>
+                        <option value="1">Dermatologist</option>
+                        <option value="8">Endocrinologist</option>
+                        <option value="4">Family Physician</option>
+                        <option value="9">Infectious Disease Physician</option>
+                        <option value="11">Necromancer</option>
+                        <option value="10">Neurologist</option>
+                        <option value="6">Obstetrician/Gynecologist</option>
+                        <option value="2">Orthepedic</option>
+                        <option value="3">Pediatrician</option>
+                        <option value="7">Psychiatrist</option>
+                    </select>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="main" style="display: flex;">
+            <div style="margin-right: 10px;">
+                <div id="nav"></div>
+            </div>
+            <div style="flex-grow: 1">
+                <div id="dp"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="myModal" class="modal">
+
+        <!-- Modal content -->
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h5 id="confirmation"></h5>
+            <input id="reason" class="form-control" type="text" required
+                placeholder="Please state your reason for visit">
+            <button id="confirmAppt" class="btn btn-dark float-start" onclick="bookPatientAppt()">Book
+                Appointment</button>
+        </div>
+
+    </div>
+
+</body>
+
+<script>
+
+    dp;
+
+    var modal = document.getElementById("myModal");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function () {
+        modal.style.display = "none";
+    }
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function (event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+
+    function loadNav() {
+        var nav = new DayPilot.Navigator("nav");
+        nav.showMonths = 3;
+        nav.skipMonths = 3;
+        nav.selectMode = "week";
+        nav.onTimeRangeSelected = function (args) {
+            dp.startDate = args.day;
+            dp.update();
+            dp.events.load("http://localhost:8080/availabiltyBySpecialty/" + paramsId);
+            //loadAppts();
+        };
+        nav.init();
+    }
+
+    function loadCalendar() {
+
+        let specialtySearch = document.getElementById("specialty").value;
+
+        dp = new DayPilot.Calendar("dp");
+        dp.viewType = "Week";
+        dp.theme = "calendar_g";
+        dp.init();
+
+        dp.eventsLoadMethod = "GET";
+        dp.eventMoveHandling = "disabled";
+
+        dp.onEventClicked = function (args) {
+
+            dp.events.list.forEach(element => {
+                if (element.id == args.e.id()) {
+                    a = element;
+                    console.log(a);
+                }
+
+            });
+            modalDisplay();
+        }
+
+        dp.events.load("http://localhost:8080/availabiltyBySpecialty/" + specialtySearch);
+        //loadAvails();
+        //loadAppts();
+
+    }
+
+    function modalDisplay() {
+        modal.style.display = "block";
+    }
+
+    function bookPatientAppt() {
+
+        let reason = document.getElementById("reason").value;
+
+        let appointment = {
+            start: a.start,
+            end: a.end,
+            docId: a.doctorId,
+            patientId: patient,
+            text: reason,
+        }
+
+        let xhttp = new XMLHttpRequest();
+
+        xhttp.onreadystatechange = function () {
+
+            if (this.readyState == 4 && this.status == 200) {
+                console.log(this.responseText);
+                confirmationAppt = JSON.parse(this.responseText);
+                console.log(confirmationAppt);
+
+                document.getElementById("confirmation").innerHTML = "Appointment Confirmed!";
+                setTimeout(() => {
+                    window.location.href = `./patientDashboard.html?id=${patient.patientId}`;
+                }, 3000);
+
+            }
+        }
+
+        xhttp.open("POST", "http://localhost:8080/bookAppointment?id=" + a.id, true);
+        xhttp.setRequestHeader("Content-type", "application/json");
+        xhttp.send(JSON.stringify(appointment));
+
+        //alert("clicked: " + args.e.id());
+    }
+
+    function getLoggedInPatient() {
+
+        let xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                console.log(this.responseText);
+                if(this.responseText != "{}") {
+                    patient = JSON.parse(this.responseText);
+                    console.log(patient);
+                    patId = patient.patientId;
+                    console.log("patId: " + patId);
+
+
+                    let welcomeHeader = `<h1 class="lead mt-3 display-4">Welcome ${patient.firstName}!</h1>`
+
+                    document.getElementById("header").innerHTML = welcomeHeader;
+                    document.getElementById("about").setAttribute("href", "./about.html?id=" + paramsId + "&email=" + patient.email);
+                    document.getElementById("contact").setAttribute("href", "./contact.html?id=" + paramsId + "&email=" + patient.email);
+                    document.getElementById("dash").setAttribute("href", "./patientDashboard.html?id=" + paramsId);
+                } else {
+                    window.location.href = "./login.html";
+                }
+
+            }
+        }
+        // getting the whole queryurl
+        let parameter = window.location.search;
+        // splitting the parameters from the querystring
+        let urlparam = new URLSearchParams(parameter);
+        // getting the id from the queryurl
+        paramsId = urlparam.get("id");
+
+        xhttp.open("GET", "http://localhost:8080/loggedInPatient?id=" + paramsId, true);
+        xhttp.send();
+    }
+
+    function logout() {
+
+        window.location.href = "./login.html";
+    }
+
+
+
+</script>
+
+</html>

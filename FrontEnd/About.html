@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link type="text/css" rel="Stylesheet" href="./CSS/login.css">
+</head>
+
+<body onload="getLoggedInPatient()">
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">Doctor Finder</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
+            aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+            <div class="navbar-nav">
+                <a class="nav-item nav-link" id="dash" href="./patientDashboard.html">Dashboard</a>
+                <a class="nav-item nav-link" id="login" href="./login.html">Login</a>
+                <a class="nav-item nav-link active" href="#">About <span class="sr-only">(current)</span></a>
+                <a class="nav-item nav-link" id="contact" href="./Contact.html">Contact Us</a>
+
+            </div>
+        </div>
+        <span class="navbar-text" id="logout"><button type="button" onclick="logout()" class="btn btn-link">Logout</button></span>
+    </nav>
+
+    <div class="container">
+        <div class="border border-3 rounded-3 text-center pb-3 bg-light">
+            <h1 class="lead mt-3 display-4">About Us</h1>
+            <p>This application is not intended for
+                use if you have an Emergency. In the case of an emergency please call
+                911 or get to an Emergency Room.
+            </p>
+            <p>Are you tired of calling your Doctor's Office trying to schedule an appointment only to
+                be told the next available time is for weeks or months out? Well with DoctorFinder you
+                can easily create an account and search by specialty to see a Doctor's immediate availability
+                for that week or month. This application is free and easy to use! You can log in to see your
+                current appointments, create appointments and cancel appointments as needed.
+            </p>
+            <p>This application is also for Doctors too! Doctors can log in, look at their scheduled
+                appointments, and add availability to their schedule for if they have extra time or
+                cancellations. They can also cancel availability as long as they don't have any scheduled appointments
+                during that time.
+            </p>
+        </div>
+
+    </div>
+
+
+</body>
+<script>
+    function getLoggedInPatient() {
+
+       
+
+        let xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                console.log(this.responseText);
+                console.log(paramsEmail);
+                console.log(this.responseText.email == paramsEmail);
+                if(this.responseText != "" && JSON.parse(this.responseText).email == paramsEmail) {
+                    user = JSON.parse(this.responseText);
+                    console.log(user);
+                    document.getElementById("dash").setAttribute("href", "./patientDashboard.html?id=" + user.patientId);
+                } else {
+                    getLoggedInDoctor();
+                }
+     
+            }
+        }
+        // getting the whole queryurl
+        let parameter = window.location.search;
+        // splitting the parameters from the querystring
+        let urlparam = new URLSearchParams(parameter);
+        // getting the id from the queryurl
+        paramsId = urlparam.get("id");
+        paramsEmail = urlparam.get("email");
+        console.log(paramsId);
+        console.log(paramsId == null);
+        if (paramsId == null) {
+            document.getElementById("login").setAttribute("href", "./login.html");
+            document.getElementById("login").text = "Login";
+            document.getElementById("dash").setAttribute("href", "");
+            document.getElementById("dash").text = ""; //TODO: not changing inner html. look at deleting elements
+            document.getElementById("dash").hidden = true;
+            document.getElementById("logout").hidden = true;
+            return;
+        }
+        document.getElementById("contact").setAttribute("href", "./contact.html?id=" + paramsId + "&email=" + paramsEmail);
+        document.getElementById("login").hidden = true;
+
+        xhttp.open("GET", "http://localhost:8080/loggedInPatient?id=" + paramsId, true);
+        xhttp.send();
+    }
+
+    function getLoggedInDoctor() {
+
+        let xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                console.log(this.responseText);
+                if(this.responseText != "" && JSON.parse(this.responseText).email == paramsEmail) {
+                    user = JSON.parse(this.responseText);
+                    console.log(user);
+                    document.getElementById("dash").setAttribute("href", "./doctorDashboard.html?id=" + user.docId);
+                } else {
+                   // window.location.href = "./login.html";
+                }
+            }
+        }
+
+        // getting the whole queryurl
+        let parameter = window.location.search;
+        // splitting the parameters from the querystring
+        let urlparam = new URLSearchParams(parameter);
+        // getting the id from the queryurl
+        paramsId = urlparam.get("id");
+
+        xhttp.open("GET", "http://localhost:8080/loggedInDoctor?id=" + paramsId, true);
+        xhttp.send();
+
+    }
+
+    function logout() {
+        window.location.href = "./login.html";
+    }
+</script>
+
+</html>
